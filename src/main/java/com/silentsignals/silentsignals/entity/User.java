@@ -1,5 +1,6 @@
 package com.silentsignals.silentsignals.entity;
 
+import com.silentsignals.silentsignals.enums.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

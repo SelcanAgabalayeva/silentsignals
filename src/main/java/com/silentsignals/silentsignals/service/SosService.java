@@ -1,7 +1,8 @@
 package com.silentsignals.silentsignals.service;
 
-import com.silentsignals.silentsignals.dto.SosRequest;
+import com.silentsignals.silentsignals.dto.SosRequestDto;
 
 public interface SosService {
-    void sendSOS(SosRequest request);
+    void sendSOS(SosRequestDto request);
+    void resolveSOS(Long userId);
 }

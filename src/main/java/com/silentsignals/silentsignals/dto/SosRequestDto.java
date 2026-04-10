@@ -5,7 +5,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 @Data
-public class SosRequest implements Serializable {
+public class SosRequestDto implements Serializable {
     private Long userId;
     private double latitude;
     private double longitude;
