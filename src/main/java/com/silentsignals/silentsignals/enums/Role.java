@@ -1,6 +1,7 @@
 package com.silentsignals.silentsignals.enums;
 
 public enum Role {
-    USER,
-    CONTACT
+    ROLE_USER,
+    ROLE_CONTACT,
+    ROLE_ADMIN
 }

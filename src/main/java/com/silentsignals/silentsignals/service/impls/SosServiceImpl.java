@@ -2,12 +2,15 @@ package com.silentsignals.silentsignals.service.impls;
 
 import com.silentsignals.silentsignals.dto.SosRequestDto;
 import com.silentsignals.silentsignals.entity.SosLog;
+import com.silentsignals.silentsignals.entity.User;
 import com.silentsignals.silentsignals.repository.SosRepository;
+import com.silentsignals.silentsignals.repository.UserRepository;
 import com.silentsignals.silentsignals.service.SosService;
 import com.silentsignals.silentsignals.websocket.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -21,27 +24,42 @@ public class SosServiceImpl implements SosService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final SosRepository sosRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final UserRepository userRepository;
 
     @Override
-    public void sendSOS(SosRequestDto request) {
+    public void sendSOS(SosRequestDto request, Authentication auth) {
 
-        // 1. Redis TTL (3 dəq)
+        User user = userRepository.findByUsername(auth.getName());
+
+        // 🚨 RATE LIMIT CHECK
+        String rateKey = "rate:sos:" + user.getId();
+
+        if (Boolean.TRUE.equals(redisTemplate.hasKey(rateKey))) {
+            throw new RuntimeException("Çox tez SOS göndərirsən! 1 dəqiqə gözlə.");
+        }
+
         redisTemplate.opsForValue().set(
-                "sos:" + request.getUserId(),
+                rateKey,
+                "1",
+                Duration.ofMinutes(1)
+        );
+
+        // 🔥 SOS SAVE
+        redisTemplate.opsForValue().set(
+                "sos:" + user.getId(),
                 request,
                 Duration.ofMinutes(3)
         );
 
-        // 2. DB log
         SosLog log = new SosLog();
-        log.setUserId(request.getUserId());
+        log.setUserId(user.getId());
         log.setStatus("SENT");
         log.setCreatedAt(LocalDateTime.now());
+
         sosRepository.save(log);
 
-        // 3. WebSocket push
         messagingTemplate.convertAndSend(
-                "/topic/sos/" + request.getUserId(),
+                "/topic/sos/" + user.getId(),
                 request
         );
     }

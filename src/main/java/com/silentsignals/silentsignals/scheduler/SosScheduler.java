@@ -27,8 +27,6 @@ public class SosScheduler {
 
         Set<String> keys = redisTemplate.keys("sos:*");
 
-        System.out.println("KEYS: " + keys);
-
         if (keys == null || keys.isEmpty()) return;
 
         for (String key : keys) {
@@ -41,12 +39,18 @@ public class SosScheduler {
 
                 System.out.println("🚨 FALLBACK TRIGGERED: " + key);
 
+                // EMAIL fallback
                 if (request.getEmail() != null) {
                     emailService.sendEmail(request.getEmail());
                     System.out.println("📧 EMAIL SENT: " + request.getEmail());
                 }
+
+                // 🔥 FIX: userId Redis key-dən çıxarılır
+                String userIdStr = key.replace("sos:", "");
+                Long userId = Long.valueOf(userIdStr);
+
                 SosLog log = sosRepository
-                        .findTopByUserIdOrderByCreatedAtDesc(request.getUserId());
+                        .findTopByUserIdOrderByCreatedAtDesc(userId);
 
                 if (log != null) {
                     log.setStatus("ESCALATED");
